@@ -1,0 +1,5 @@
+{
+    "username_file": "usernames.txt",
+    "vote_url_file": "urls.txt",
+    "headless": "False"
+}

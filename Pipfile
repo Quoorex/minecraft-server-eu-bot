@@ -1,0 +1,17 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pep8 = "*"
+
+[packages]
+requests = "*"
+bs4 = "*"
+selenium = "*"
+python-anticaptcha = "*"
+webdrivermanager = "*"
+
+[requires]
+python_version = "3.7"
