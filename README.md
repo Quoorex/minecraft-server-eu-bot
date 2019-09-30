@@ -1,6 +1,6 @@
 # Minecraft-Server.eu Voting Bot
 
-A voting bot for Minecraft-Server.eu. Supports multiple servers to vote for and usernames.
+A voting bot for Minecraft-Server.eu. Supports multiple servers and usernames to vote for.
 
 ## Requirements
 
