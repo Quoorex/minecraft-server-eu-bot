@@ -1,6 +1,7 @@
 import os
 import time
 import json
+import random
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, WebDriverException, UnexpectedAlertPresentException
@@ -9,6 +10,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.firefox.options import Options
 from webdrivermanager import GeckoDriverManager
+from fake_useragent import UserAgent
 
 from util import get_lines
 
@@ -17,6 +19,9 @@ class Votebot():
 
     def __init__(self):
         self.project_dir = os.path.dirname(os.path.abspath(__file__))
+        with open("config.json") as f:
+            self.conf = json.load(f)
+        self.proxies = get_lines(self.conf["proxy"]["file"])
 
     def install_driver(self):
         gdd = GeckoDriverManager()
@@ -31,6 +36,23 @@ class Votebot():
                     options.headless = True
                 profile = webdriver.FirefoxProfile()
                 profile.set_preference('dom.webdriver.enabled', False)
+
+                if self.conf["fake_useragent"] == "True":
+                    ua = UserAgent().random
+                    profile.set_preference("general.useragent.override", ua)
+
+                p_conf = self.conf["proxy"]
+                if p_conf["enabled"] == "True":
+                    proxy = random.choice(self.proxies)
+                    host, port = proxy.split(":")
+                    p_type = p_conf["type"].lower()
+                    if p_type == "https":
+                        p_type = "ssl"
+                    profile.set_preference("network.proxy.type", 1)
+                    profile.set_preference(f"network.proxy.{p_type}", host)
+                    profile.set_preference(f"network.proxy.{p_type}_port", int(port))
+
+                profile.update_preferences()
                 driver = webdriver.Firefox(profile, options=options)
                 break
             except WebDriverException:
@@ -114,12 +136,10 @@ class Votebot():
 
 if __name__ == "__main__":
     bot = Votebot()
-    with open("config.json") as f:
-        conf = json.load(f)
 
-    usernames = get_lines(conf["username_file"])  # Users to get the voting reward for
-    vote_urls = get_lines(conf["vote_url_file"])  # URL to the vote page of a server on minecraft-server.eu
-    headless = conf["headless"]
+    usernames = get_lines(bot.conf["username_file"])  # Users to get the voting reward for
+    vote_urls = get_lines(bot.conf["vote_url_file"])  # URL to the vote page of a server on minecraft-server.eu
+    headless = bot.conf["headless"]
 
     for user in usernames:
         for vote_url in vote_urls:

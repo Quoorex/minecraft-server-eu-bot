@@ -1,6 +1,6 @@
 # Minecraft-Server.eu Voting Bot
 
-A voting bot for Minecraft-Server.eu. Supports multiple servers and usernames to vote for.
+A voting bot for Minecraft-Server.eu. Supports proxies and multiple servers and usernames to vote for.
 
 ## Requirements
 
@@ -9,6 +9,10 @@ A voting bot for Minecraft-Server.eu. Supports multiple servers and usernames to
 - Pipenv (`pip install pipenv`)
 - Mozilla Firefox
 
+## Important
+
+- Minecraft-Server.eu does IP ban after around 4-5 votes (not exactly sure) so it's advised to use proxies (that are not banned by Google)
+
 ## TODO
 
 - Integrate Captcha Solving API from Antigate
@@ -16,6 +20,6 @@ A voting bot for Minecraft-Server.eu. Supports multiple servers and usernames to
   - Botting only votes
   - Botting rewards (typing usernames in)
 - Run the bot at randomized times each day
-- Implement proxy support to bypass ip bans
+- Implement a proxy scraper
 - Ip ban check
 - Document the installation process

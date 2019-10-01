@@ -1,5 +1,11 @@
 {
     "username_file": "usernames.txt",
     "vote_url_file": "urls.txt",
-    "headless": "False"
+    "headless": "False",
+    "fake_useragent": "True",
+    "proxy": {
+        "enabled": "False",
+        "type": "HTTPS",
+        "file": "proxies.txt"
+    }
 }

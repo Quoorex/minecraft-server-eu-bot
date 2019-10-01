@@ -12,6 +12,7 @@ bs4 = "*"
 selenium = "*"
 python-anticaptcha = "*"
 webdrivermanager = "*"
+fake-useragent = "*"
 
 [requires]
 python_version = "3.7"
