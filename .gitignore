@@ -1,6 +1,7 @@
 geckodriver.log
 urls.txt
 usernames.txt
+proxies.txt
 
 # Python
 

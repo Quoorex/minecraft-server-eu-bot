@@ -2,6 +2,8 @@ import os
 import time
 import json
 import random
+from threading import Timer
+from datetime import datetime, timedelta
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, WebDriverException, UnexpectedAlertPresentException
@@ -12,7 +14,7 @@ from selenium.webdriver.firefox.options import Options
 from webdrivermanager import GeckoDriverManager
 from fake_useragent import UserAgent
 
-from util import get_lines
+from util import get_lines, out
 
 
 class Votebot():
@@ -22,17 +24,18 @@ class Votebot():
         with open("config.json") as f:
             self.conf = json.load(f)
         self.proxies = get_lines(self.conf["proxy"]["file"])
+        self.headless = self.conf["headless"]
 
     def install_driver(self):
         gdd = GeckoDriverManager()
         gdd.download_and_install()
 
-    def init_driver(self, headless):
+    def init_driver(self):
         # Initialize a Firefox webdriver
         while True:
             try:
                 options = Options()
-                if headless == "True":
+                if self.headless == "True":
                     options.headless = True
                 profile = webdriver.FirefoxProfile()
                 profile.set_preference('dom.webdriver.enabled', False)
@@ -74,7 +77,7 @@ class Votebot():
     def vote(self, driver, username, vote_url):
         driver.get(vote_url)
 
-        time.sleep(3)
+        time.sleep(5)
 
         try:
             # Accept TOS
@@ -116,22 +119,24 @@ class Votebot():
             time.sleep(0.5)
 
         if "success" in driver.current_url:
-            print(f"Voted successfully for {username}")
+            out(f"Voted successfully for {username}")
         elif "fail" in driver.current_url:
-            print(f"Couldn't vote for {username}")
+            out(f"Couldn't vote for {username}")
 
         driver.close()
 
-    def run(self, username, vote_url, headless):
-        driver = self.init_driver(headless)
-        self.install_ext(driver)
-        while True:
-            try:
-                self.vote(driver, username, vote_url)
-                break
-            except UnexpectedAlertPresentException:
-                # Captcha Error
-                continue
+    def run(self, usernames, vote_urls):
+        for username in usernames:
+            for vote_url in vote_urls:
+                driver = self.init_driver()
+                self.install_ext(driver)
+                while True:
+                    try:
+                        self.vote(driver, username, vote_url)
+                        break
+                    except UnexpectedAlertPresentException:
+                        # Captcha Error
+                        continue
 
 
 if __name__ == "__main__":
@@ -139,8 +144,15 @@ if __name__ == "__main__":
 
     usernames = get_lines(bot.conf["username_file"])  # Users to get the voting reward for
     vote_urls = get_lines(bot.conf["vote_url_file"])  # URL to the vote page of a server on minecraft-server.eu
-    headless = bot.conf["headless"]
 
-    for user in usernames:
-        for vote_url in vote_urls:
-            bot.run(user, vote_url, headless)
+    bot.run(usernames, vote_urls)
+
+    if bot.conf["use_timer"] == "True":
+        # calculate a randomized time for the next execution
+        time_till_next_day = datetime.combine(
+                datetime.now().date() + timedelta(days=1), datetime.strptime("0000", "%H%M").time()
+            ) - datetime.now()
+
+        delay = time_till_next_day + timedelta(hours=random.randint(2, 23))
+        out(f"Next execution in: {delay}")
+        Timer(delay.seconds, bot.run, (usernames, vote_urls)).start()
