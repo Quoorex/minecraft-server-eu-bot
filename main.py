@@ -17,6 +17,8 @@ from fake_useragent import UserAgent
 from util import get_lines, out
 
 
+# TODO Replace time.sleep() with proper Selenium waiting functions
+
 class Votebot():
 
     def __init__(self):
@@ -148,11 +150,12 @@ if __name__ == "__main__":
     bot.run(usernames, vote_urls)
 
     if bot.conf["use_timer"] == "True":
-        # calculate a randomized time for the next execution
-        time_till_next_day = datetime.combine(
-                datetime.now().date() + timedelta(days=1), datetime.strptime("0000", "%H%M").time()
-            ) - datetime.now()
+        while True:
+            # calculate a randomized time for the next execution
+            time_till_next_day = datetime.combine(
+                    datetime.now().date() + timedelta(days=1), datetime.strptime("0000", "%H%M").time()
+                ) - datetime.now()
 
-        delay = time_till_next_day + timedelta(hours=random.randint(2, 23))
-        out(f"Next execution in: {delay}")
-        Timer(delay.seconds, bot.run, (usernames, vote_urls)).start()
+            delay = time_till_next_day + timedelta(hours=random.randint(2, 23))
+            out(f"Next execution in: {delay}")
+            Timer(delay.seconds, bot.run, (usernames, vote_urls)).start()
