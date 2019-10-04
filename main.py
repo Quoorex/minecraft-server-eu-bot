@@ -2,7 +2,6 @@ import os
 import time
 import json
 import random
-from threading import Timer
 from datetime import datetime, timedelta
 
 from selenium import webdriver
@@ -158,4 +157,5 @@ if __name__ == "__main__":
 
             delay = time_till_next_day + timedelta(hours=random.randint(2, 23))
             out(f"Next execution in: {delay}")
-            Timer(delay.seconds, bot.run, (usernames, vote_urls)).start()
+            time.sleep(delay.seconds)
+            bot.run(usernames, vote_urls)
