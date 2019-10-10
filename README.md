@@ -19,7 +19,6 @@ A voting bot for Minecraft-Server.eu. Supports proxies and multiple servers and 
 - 2 Modes:
   - Botting only votes
   - Botting rewards (typing usernames in)
-- Run the bot at randomized times each day
 - Implement a proxy scraper
 - Ip ban check
 - Document the installation process
