@@ -9,6 +9,7 @@ from selenium.common.exceptions import NoSuchElementException, WebDriverExceptio
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.firefox.options import Options
 from webdrivermanager import GeckoDriverManager
 from fake_useragent import UserAgent
@@ -92,6 +93,10 @@ class Votebot():
         try:
             # We use .find_element_by_id here because we know the id
             text_input = driver.find_element_by_id("playername")
+
+            time.sleep(10)
+
+            text_input.click()
 
             # Then we'll fake typing into it
             text_input.send_keys(username)
