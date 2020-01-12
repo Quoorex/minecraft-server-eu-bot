@@ -132,8 +132,9 @@ class Votebot():
         driver.close()
 
     def run(self, usernames, vote_urls):
-        for username in usernames:
-            for vote_url in vote_urls:
+        for vote_url in vote_urls:
+            out(f"Voting for the url {vote_url}")
+            for username in usernames:
                 driver = self.init_driver()
                 self.install_ext(driver)
                 while True:
