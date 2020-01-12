@@ -13,6 +13,35 @@ A voting bot for Minecraft-Server.eu. Supports proxies and multiple servers and 
 
 - Minecraft-Server.eu does IP ban after around 4-5 votes (not exactly sure) so it's advised to use proxies (that are not banned by Google)
 
+## Installation
+
+- `pipenv install`  
+  - this will setup a virtual environment for the project
+  - if this fails because you do no have Python 3.8 installed, change `python_version = "3.8"` to `python_version = "3.6"` in [Pipfile](Pipfile) or any other version greater than 3.6 that you have installed
+- `pipenv shell`
+  - activates the environment
+- `python main.py`
+  - runs the program
+
+## Configuration
+
+All settings can be edited in [config.json](config.json).
+
+### Settings
+
+- __username_file:__ file to load the username to vote for from  
+- __vote_url_file:__ file to load the vote urls from  
+  - [example url](https://minecraft-server.eu/vote/index/1A73C)  
+- __headless:__ whether to run display the browser windows (True) or not (False)
+- __fake_useragent:__ should the browser useragent be faked for every vote attempt
+  - Note: this option is not recommended, as this can lead to ReCaptchas not working anymore
+- __proxy:__
+  - __enabled:__ use proxies or not
+  - __type:__ proxy type; supported options: HTTP, HTTPS, SOCKS4, SOCKS5
+  - __file:__ file to load the proxies from; proxy format: __host:port__
+- __use_timer:__ enabling this lets the program vote periodically (every 24h)
+  - Note: Using this is not recommended, as the program stops when a error comes up. You should rather use something like `cron` to start the program on a regular basis.
+
 ## TODO
 
 - Integrate Captcha Solving API from Antigate
@@ -21,4 +50,3 @@ A voting bot for Minecraft-Server.eu. Supports proxies and multiple servers and 
   - Botting rewards (typing usernames in)
 - Implement a proxy scraper
 - Ip ban check
-- Document the installation process
