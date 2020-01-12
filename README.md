@@ -4,7 +4,7 @@ A voting bot for Minecraft-Server.eu. Supports proxies and multiple servers and 
 
 ## Requirements
 
-- Python 3
+- Python 3.6 or higher
 - Pip
 - Pipenv (`pip install pipenv`)
 - Mozilla Firefox
