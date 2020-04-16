@@ -6,19 +6,18 @@ A voting bot for Minecraft-Server.eu. Supports proxies and multiple servers and 
 
 - Python 3.6 or higher
 - Pip
-- Pipenv (`pip install pipenv`)
+- Poetry (`pip install poetry`)
 - Mozilla Firefox
 
 ## Important
 
-- Minecraft-Server.eu does IP ban after around 4-5 votes (not exactly sure) so it's advised to use proxies (that are not banned by Google)
+- Minecraft-Server.eu does IP ban after around 4-5 votes (not exactly sure) so it's advised to use proxies (that are not banned by Google or else the captchas won't work)
 
 ## Installation
 
-- `pipenv install`  
+- `poetry install`  
   - this will setup a virtual environment for the project
-  - if this fails because you do no have Python 3.8 installed, change `python_version = "3.8"` to `python_version = "3.6"` in [Pipfile](Pipfile) or any other version greater than 3.6 that you have installed
-- `pipenv shell`
+- `poetry shell`
   - activates the environment
 - `python main.py`
   - runs the program
