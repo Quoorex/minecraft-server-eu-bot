@@ -5,11 +5,13 @@ import random
 from datetime import datetime, timedelta
 
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException, WebDriverException, UnexpectedAlertPresentException
+from selenium.common.exceptions import NoSuchElementException, WebDriverException, UnexpectedAlertPresentException, TimeoutException
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.firefox.options import Options
 from webdrivermanager import GeckoDriverManager
 from fake_useragent import UserAgent
@@ -22,7 +24,7 @@ from util import get_lines, out
 class Votebot():
 
     def __init__(self):
-        self.project_dir = os.path.dirname(os.path.abspath(__file__))
+        self.project_dir = os.path.abspath(os.path.dirname(__file__))
         with open("config.json") as f:
             self.conf = json.load(f)
         self.proxies = get_lines(self.conf["proxy"]["file"])
@@ -66,7 +68,7 @@ class Votebot():
         return driver
 
     def install_ext(self, driver):
-        extension_dir = self.project_dir + "/browser/extensions/"
+        extension_dir = os.path.join(self.project_dir, "browser/extensions/")
 
         extensions = [
             "{e58d3966-3d76-4cd9-8552-1582fbc800c1}.xpi",
@@ -74,18 +76,23 @@ class Votebot():
         ]
 
         for ext in extensions:
-            driver.install_addon(extension_dir + ext)
+            driver.install_addon(os.path.join(extension_dir, ext))
 
     def vote(self, driver, username, vote_url):
         driver.get(vote_url)
 
-        time.sleep(5)
+        # time.sleep(5)  # Wait for the page to properly load
 
         try:
             # Accept TOS
-            submit_button = driver.find_element_by_xpath("/html/body/div[1]/div/div/div[2]/button[2]")
+            tos_box = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'qc-cmp-ui-content')))
+            actions = ActionChains(driver)
+            actions.move_to_element(tos_box).perform()
+            tos_box.click()
+            submit_button = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[1]/div/div/div[2]/button[2]")))
             submit_button.click()
-        except NoSuchElementException:
+
+        except TimeoutException:
             pass  # No TOS popup
 
         time.sleep(2)
@@ -121,12 +128,20 @@ class Votebot():
             pass  # No captcha
 
         # TODO Optimize the url check
-        while ("success" in driver.current_url or "fail" in driver.current_url) is False:
-            time.sleep(0.5)
+        i = 0
+        while True:
+            if "success" in driver.current_url or "fail" in driver.current_url:
+                current_url = driver.current_url
+                break
+            elif i == 5:
+                out(f"Captcha failed for {username}")
+                raise UnexpectedAlertPresentException
+            i += 1
+            time.sleep(1)
 
-        if "success" in driver.current_url:
+        if "success" in current_url:
             out(f"Voted successfully for {username}")
-        elif "fail" in driver.current_url:
+        elif "fail" in current_url:
             out(f"Couldn't vote for {username}")
 
         driver.close()
