@@ -1,3 +1,6 @@
+# IDE
+.vscode
+
 geckodriver.log
 urls.txt
 usernames.txt
