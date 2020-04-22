@@ -1,8 +1,9 @@
-import os
 import time
+import platform
 import json
 import random
 from datetime import datetime, timedelta
+from pathlib import Path
 
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, WebDriverException, UnexpectedAlertPresentException, TimeoutException
@@ -13,6 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from webdrivermanager import GeckoDriverManager
 from fake_useragent import UserAgent
 
@@ -24,7 +26,8 @@ from util import get_lines, out
 class Votebot():
 
     def __init__(self):
-        self.project_dir = os.path.abspath(os.path.dirname(__file__))
+        self.project_dir = Path.absolute(Path(__file__).parent)
+        self.host_os = platform.system()
         with open("config.json") as f:
             self.conf = json.load(f)
         self.proxies = get_lines(self.conf["proxy"]["file"])
@@ -60,7 +63,16 @@ class Votebot():
                     profile.set_preference(f"network.proxy.{p_type}_port", int(port))
 
                 profile.update_preferences()
-                driver = webdriver.Firefox(profile, options=options)
+
+                driver_filename_extension = ""
+                if (self.host_os == "Linux" or self.host_os == "Darwin"):  # Linux or MacOS
+                    driver_folder = "macos" if self.host_os == "Darwin" else "linux"
+                elif self.host_os == "Windows":
+                    driver_folder = "windows"
+                    driver_filename_extension = ".exe"
+                driver_path = str(Path.joinpath(self.project_dir, f"browser/driver/{driver_folder}/geckodriver{driver_filename_extension}"))
+
+                driver = webdriver.Firefox(profile, options=options, executable_path=driver_path)
                 break
             except WebDriverException:
                 self.install_driver()
@@ -68,7 +80,7 @@ class Votebot():
         return driver
 
     def install_ext(self, driver):
-        extension_dir = os.path.join(self.project_dir, "browser/extensions/")
+        extension_dir = Path.joinpath(self.project_dir, "browser/extensions/")
 
         extensions = [
             "{e58d3966-3d76-4cd9-8552-1582fbc800c1}.xpi",
@@ -76,7 +88,8 @@ class Votebot():
         ]
 
         for ext in extensions:
-            driver.install_addon(os.path.join(extension_dir, ext))
+            # Path has to be converted to a string because a path object won't work here
+            driver.install_addon(str(Path.joinpath(extension_dir, ext)))
 
     def vote(self, driver, username, vote_url):
         driver.get(vote_url)
@@ -158,6 +171,7 @@ class Votebot():
                         break
                     except UnexpectedAlertPresentException:
                         # Captcha Error
+                        out(f"Retrying to vote for {username}")
                         continue
 
 
