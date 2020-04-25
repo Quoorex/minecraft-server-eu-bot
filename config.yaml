@@ -1,11 +1,12 @@
 username_file: usernames.txt
 vote_url_file: urls.txt
 headless: 'False'
+# Fake useragent can cause problems
 fake_useragent: 'False'
 proxy:
-  enabled: 'True'
+  enabled: 'False'
   # Allowed types: HTTP, HTTPS, SOCKS
-  type: HTTP
+  type: SOCKS
   # If the type is SOCKS specify the version (4 or 5)
   socks_version: 4
   file: proxies.txt
