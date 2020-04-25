@@ -1,6 +1,5 @@
 import time
 import platform
-import json
 import random
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -17,6 +16,7 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from webdrivermanager import GeckoDriverManager
 from fake_useragent import UserAgent
+import yaml
 
 from util import get_lines, out
 
@@ -28,8 +28,8 @@ class Votebot():
     def __init__(self):
         self.project_dir = Path.absolute(Path(__file__).parent)
         self.host_os = platform.system()
-        with open("config.json") as f:
-            self.conf = json.load(f)
+        with open("config.yaml") as f:
+            self.conf = yaml.safe_load(f)
         self.proxies = get_lines(self.conf["proxy"]["file"])
         self.headless = self.conf["headless"]
 
@@ -58,6 +58,11 @@ class Votebot():
                     p_type = p_conf["type"].lower()
                     if p_type == "https":
                         p_type = "ssl"
+                    elif p_type == "socks":
+                        profile.set_preference("network.proxy.socks_version", p_conf["socks_version"])
+                    elif p_type == "http":
+                        # Allow the usage of the http proxy for https requests
+                        profile.set_preference("network.proxy.share_proxy_settings", True)
                     profile.set_preference("network.proxy.type", 1)
                     profile.set_preference(f"network.proxy.{p_type}", host)
                     profile.set_preference(f"network.proxy.{p_type}_port", int(port))

@@ -1,0 +1,12 @@
+username_file: usernames.txt
+vote_url_file: urls.txt
+headless: 'False'
+fake_useragent: 'False'
+proxy:
+  enabled: 'True'
+  # Allowed types: HTTP, HTTPS, SOCKS
+  type: HTTP
+  # If the type is SOCKS specify the version (4 or 5)
+  socks_version: 4
+  file: proxies.txt
+use_timer: 'False'
