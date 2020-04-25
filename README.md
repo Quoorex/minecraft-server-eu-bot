@@ -24,7 +24,7 @@ A voting bot for Minecraft-Server.eu. Supports proxies and multiple servers and 
 
 ## Configuration
 
-All settings can be edited in [config.json](config.json).
+All settings can be edited in [config.yaml](config.yaml).
 
 ### Settings
 
