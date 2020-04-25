@@ -37,6 +37,13 @@ class Votebot():
         gdd = GeckoDriverManager()
         gdd.download_and_install()
 
+    def set_viewport_size(self, driver, width, height):
+        window_size = driver.execute_script("""
+            return [window.outerWidth - window.innerWidth + arguments[0],
+            window.outerHeight - window.innerHeight + arguments[1]];
+            """, width, height)
+        driver.set_window_size(*window_size)
+
     def init_driver(self):
         # Initialize a Firefox webdriver
         while True:
@@ -97,6 +104,8 @@ class Votebot():
             driver.install_addon(str(Path.joinpath(extension_dir, ext)))
 
     def vote(self, driver, username, vote_url):
+        # TODO set viewport depending on whether a mobile or desktop useragent is used
+        self.set_viewport_size(driver, 1920, 1080)
         driver.get(vote_url)
 
         # time.sleep(5)  # Wait for the page to properly load
