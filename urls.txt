@@ -22,3 +22,6 @@ https://minecraft-mp.com/server/268820/vote/
 
 # Hard Captcha, 1 vote per ip per device, 24 hours
 https://minecraft-server.net/vote/mcCesium/
+
+# Different Captcha, 1 vote per ip or device, 24 hours
+https://minecraftservers.org/vote/47497

@@ -128,7 +128,26 @@ class Votebot():
             driver.switch_to.frame(driver.find_element_by_xpath(
                 "//*[@title='recaptcha challenge']"))
         except NoSuchElementException:
-            return
+            # hCaptcha ?
+            try:
+                driver.switch_to.default_content()
+                time.sleep(1)
+                driver.switch_to.frame(driver.find_element_by_xpath(
+                    "//*[@title='Main content of the hCaptcha challenge']"))
+            except NoSuchElementException:
+                return
+
+            try:
+                driver.find_element_by_xpath(
+                    '//div[@class="border"]').click()
+            except NoSuchElementException:
+                pass
+
+            try:
+                driver.find_element_by_xpath(
+                    '//div[@class="button submit-button"]').click()
+            except NoSuchElementException:
+                pass
 
         time.sleep(2)
 
@@ -164,6 +183,21 @@ class Votebot():
             checkbox.click()
             time.sleep(0.1)
             checkbox.click()
+
+            return
+        except NoSuchElementException:
+            pass
+
+        try:
+            # Try to solve a captcha with the browser extension Buster
+            driver.switch_to.frame(driver.find_element_by_xpath(
+                "//div[contains(@class,'h-recaptcha')]/iframe"))
+            checkbox = driver.find_element_by_id("checkbox")
+            checkbox.click()
+            time.sleep(0.1)
+            checkbox.click()
+
+            return
         except NoSuchElementException:
             pass
 
@@ -181,6 +215,8 @@ class Votebot():
         self.try_captcha(driver)
 
         time.sleep(5)
+
+        driver.switch_to.default_content()
 
         try:
             # We use .find_element_by_id here because we know the id
@@ -226,6 +262,10 @@ class Votebot():
                 driver.find_element_by_xpath("//label[@for='rate-10']").click()
                 submit_button = driver.find_element_by_xpath(
                     "//input[@value='Confirm Vote']")
+            elif 'minecraftservers.org' in vote_url:
+                text_input = driver.find_element_by_name('username')
+                submit_button = driver.find_element_by_xpath(
+                    "//button[@class='button vote submit']")
 
             text_input.click()
 
@@ -320,6 +360,17 @@ class Votebot():
                         '//span[@class="left badge green white-text"]')) > 0:
                     success = True
                     break
+            elif 'minecraftservers.org' in vote_url:
+                if driver.current_url == 'https://minecraftservers.org/server/47497' and len(driver.find_elements_by_xpath('//div[@class="flash"]')) > 0:
+                    success = True
+                    break
+                if len(driver.find_elements_by_xpath('//div[@class="error-message"]')) > 0:
+                    success = False
+                    break
+                if len(driver.find_elements_by_xpath('//span[@class="validation-error"]')) > 0:
+                    # captcha was failed
+                    break
+
             else:
                 out(f"{bcolors.FAIL}Unsure if the vote worked. Check yourself{bcolors.ENDC}")
                 success = False
@@ -338,6 +389,8 @@ class Votebot():
     def run(self, usernames, vote_urls, captcha_retries, num_users):
 
         random.shuffle(usernames)
+        random.shuffle(vote_urls)
+
         sum_votes = 0
         for username in usernames[0:num_users]:
             out(f"Voting for {bcolors.OKCYAN}{username}{bcolors.ENDC}")
@@ -379,7 +432,7 @@ if __name__ == "__main__":
 
     captcha_tries = bot.conf["captcha_tries"]
 
-    if bot.conf["vote_now"] == "True" or (len(sys.argv) >= 3 and sys.argv[2] == "False"):
+    if bot.conf["vote_now"] == "True" or (len(sys.argv) >= 3 and sys.argv[2] == "True"):
         try:
             bot.run(usernames, vote_urls, captcha_tries,
                     bot.conf["users_per_round"])
@@ -394,10 +447,10 @@ if __name__ == "__main__":
                 0, 60 * 60 * (bot.conf["timer_max"] - bot.conf["timer_min"])))
         out(f"Next execution in: {bcolors.WARNING}{delay}{bcolors.ENDC}")
         time.sleep(1)
-        p = subprocess.Popen(f"sleep {delay.seconds} && python main.py False",
+        p = subprocess.Popen(f"sleep {delay.seconds} && python main.py True",
                              stdout=subprocess.PIPE, shell=True, stderr=subprocess.STDOUT)
 
-        if len(sys.argv) < 3 or sys.argv[2] != "False":
+        if len(sys.argv) < 3 or sys.argv[2] != "True":
             out('')
             out("Now running in the background.")
             out(
