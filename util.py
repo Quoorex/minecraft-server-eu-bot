@@ -5,7 +5,8 @@ def get_lines(file):
     lines = []
     with open(file) as f:
         for l in f.readlines():
-            lines.append(l)
+            if l[0] != '#' and len(l) > 1:
+                lines.append(l.rstrip("\n"))
     return lines
 
 

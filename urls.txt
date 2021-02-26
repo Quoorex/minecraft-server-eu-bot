@@ -1,0 +1,24 @@
+# I think I can get past the captcha by having a captcha iframe open in a different window
+
+# Easier Captcha, allows 1-2 votes from same ip (Allowed me to vote again like an hour later), 24 hour delay
+https://mc-servers.com/mcvote/4437/
+
+# Hard Captcha, allows 6+ votes from same ip, 12 hour delay
+https://topg.org/Minecraft/in-615437
+
+# Easier Captcha, allows 2 votes from same ip (I think), 24 hours
+https://bestservers.com/server/700/vote
+
+# no captcha, 4 hour delay, allows 2 votes from same ip (I think)
+# ok so this one said 4 hours at first but now it says 24
+https://minecraft-server-list.com/server/467426/vote/
+
+# no captcha, reroute to server page if already voted which means it will think it was successful
+# I think you can send multiple votes with the same ip
+https://topminecraftservers.org/vote/13727
+
+# Hard captcha I think, 6 hour delay, 1 vote per ip
+https://minecraft-mp.com/server/268820/vote/
+
+# Hard Captcha, 1 vote per ip, 24 hours
+https://minecraft-server.net/vote/mcCesium/

@@ -1,6 +1,8 @@
 # Minecraft-Server.eu Voting Bot
 
-A voting bot for Minecraft-Server.eu. Supports proxies and multiple servers and usernames to vote for.
+A voting bot for All sorts of minecraft server listing sites. Supports proxies and multiple servers and usernames to vote for.
+
+Forked from Quoorex who made this bot specifically for minecraft-server.eu
 
 ## Requirements
 
@@ -15,7 +17,7 @@ A voting bot for Minecraft-Server.eu. Supports proxies and multiple servers and 
 
 ## Installation
 
-- `poetry install`  
+- `poetry install`
   - this will setup a virtual environment for the project
 - `poetry shell`
   - activates the environment
@@ -28,17 +30,17 @@ All settings can be edited in [config.yaml](config.yaml).
 
 ### Settings
 
-- __username_file:__ file to load the username to vote for from  
-- __vote_url_file:__ file to load the vote urls from  
-  - [example url](https://minecraft-server.eu/vote/index/1A73C)  
-- __headless:__ whether to run display the browser windows (True) or not (False)
-- __fake_useragent:__ should the browser useragent be faked for every vote attempt
+- **username_file:** file to load the username to vote for from
+- **vote_url_file:** file to load the vote urls from
+  - [example url](https://minecraft-server.eu/vote/index/1A73C)
+- **headless:** whether to run display the browser windows (True) or not (False)
+- **fake_useragent:** should the browser useragent be faked for every vote attempt
   - Note: this option is not recommended, as this can lead to ReCaptchas not working anymore
-- __proxy:__
-  - __enabled:__ use proxies or not
-  - __type:__ proxy type; supported options: HTTP, HTTPS, SOCKS4, SOCKS5
-  - __file:__ file to load the proxies from; proxy format: __host:port__
-- __use_timer:__ enabling this lets the program vote periodically (every 24h)
+- **proxy:**
+  - **enabled:** use proxies or not
+  - **type:** proxy type; supported options: HTTP, HTTPS, SOCKS4, SOCKS5
+  - **file:** file to load the proxies from; proxy format: **host:port**
+- **use_timer:** enabling this lets the program vote periodically (every 24h)
   - Note: Using this is not recommended, as the program stops when a error comes up. You should rather use something like `cron` to start the program on a regular basis.
 
 ## TODO

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException, WebDriverException, UnexpectedAlertPresentException, TimeoutException
+from selenium.common.exceptions import *
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.common.by import By
@@ -13,7 +13,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from webdrivermanager import GeckoDriverManager
 from fake_useragent import UserAgent
 import yaml
@@ -45,7 +44,7 @@ class Votebot():
         driver.set_window_size(*window_size)
 
     def init_driver(self):
-        # Initialize a Firefox webdriver
+        # Initialize a webdriver
         while True:
             try:
                 options = Options()
@@ -66,13 +65,16 @@ class Votebot():
                     if p_type == "https":
                         p_type = "ssl"
                     elif p_type == "socks":
-                        profile.set_preference("network.proxy.socks_version", p_conf["socks_version"])
+                        profile.set_preference(
+                            "network.proxy.socks_version", p_conf["socks_version"])
                     elif p_type == "http":
                         # Allow the usage of the http proxy for https requests
-                        profile.set_preference("network.proxy.share_proxy_settings", True)
+                        profile.set_preference(
+                            "network.proxy.share_proxy_settings", True)
                     profile.set_preference("network.proxy.type", 1)
                     profile.set_preference(f"network.proxy.{p_type}", host)
-                    profile.set_preference(f"network.proxy.{p_type}_port", int(port))
+                    profile.set_preference(
+                        f"network.proxy.{p_type}_port", int(port))
 
                 profile.update_preferences()
 
@@ -82,9 +84,11 @@ class Votebot():
                 elif self.host_os == "Windows":
                     driver_folder = "windows"
                     driver_filename_extension = ".exe"
-                driver_path = str(Path.joinpath(self.project_dir, f"browser/driver/{driver_folder}/geckodriver{driver_filename_extension}"))
+                driver_path = str(Path.joinpath(
+                    self.project_dir, f"browser/driver/{driver_folder}/geckodriver{driver_filename_extension}"))
 
-                driver = webdriver.Firefox(profile, options=options, executable_path=driver_path)
+                driver = webdriver.Firefox(
+                    profile, options=options, executable_path=driver_path)
                 break
             except WebDriverException:
                 self.install_driver()
@@ -103,108 +107,264 @@ class Votebot():
             # Path has to be converted to a string because a path object won't work here
             driver.install_addon(str(Path.joinpath(extension_dir, ext)))
 
+    def try_captcha(self, driver):
+        try:
+            driver.switch_to.default_content()
+            time.sleep(1)
+            driver.switch_to.frame(driver.find_element_by_xpath(
+                "//*[@title='recaptcha challenge']"))
+        except NoSuchElementException:
+            out("Didn't find a captcha challenge!")
+            return
+
+        time.sleep(2)
+
+        try:
+            driver.find_element_by_xpath(
+                '//*[@id="solver-button"]').click()
+        except (NoSuchElementException, ElementNotInteractableException):
+            out("Didn't find a captcha solve button!")
+
+        time.sleep(3)
+
+        try:
+            outside_shadow = driver.find_element_by_xpath(
+                "//div[@class='button-holder help-button-holder']")
+
+            shadow_root = driver.execute_script(
+                'return arguments[0].shadowRoot', outside_shadow)
+
+            if shadow_root is not None:
+                shadow_root.find_element_by_xpath(
+                    '//*[@id="solver-button"]').click()
+        except NoSuchElementException:
+            out("Didn't find a captcha solve shadowroot button!")
+
     def vote(self, driver, username, vote_url):
         # TODO set viewport depending on whether a mobile or desktop useragent is used
         self.set_viewport_size(driver, 1920, 1080)
         driver.get(vote_url)
 
-        # time.sleep(5)  # Wait for the page to properly load
-
-        try:
-            # Accept TOS
-            tos_box = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'qc-cmp-ui-content')))
-            actions = ActionChains(driver)
-            actions.move_to_element(tos_box).perform()
-            tos_box.click()
-            submit_button = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[1]/div/div/div[2]/button[2]")))
-            submit_button.click()
-
-        except TimeoutException:
-            pass  # No TOS popup
-
         time.sleep(2)
 
         try:
             # We use .find_element_by_id here because we know the id
-            text_input = driver.find_element_by_id("playername")
-
-            time.sleep(10)
+            if 'minecraft-server-list.com' in vote_url:
+                text_input = driver.find_element_by_id(
+                    "ignn")
+                submit_button = driver.find_element_by_name("button")
+            elif 'mc-servers.com' in vote_url:
+                try:
+                    driver.find_element_by_xpath(
+                        '//a[@class="cc-btn cc-dismiss"]').click()
+                except NoSuchElementException:
+                    pass
+                text_input = driver.find_element_by_name(
+                    "username")
+                possible_submits = driver.find_elements_by_xpath(
+                    "//button[@type='submit']")
+                for button in possible_submits:
+                    if button.text == 'Vote':
+                        submit_button = button
+                        break
+                if 'submit_button' not in locals():
+                    raise NoSuchElementException
+            elif 'topg.org' in vote_url:
+                text_input = driver.find_element_by_id('game_user')
+                submit_button = driver.find_element_by_name("submit")
+            elif 'bestservers.com' in vote_url:
+                text_input = driver.find_element_by_name('username')
+                submit_button = driver.find_element_by_name("submit")
+            elif 'topminecraftservers.org' in vote_url:
+                text_input = driver.find_element_by_name('mc_username')
+                submit_button = driver.find_element_by_name("voteSubmit")
+            elif 'minecraft-mp.com' in vote_url:
+                try:
+                    driver.find_element_by_id('cookiescript_accept').click()
+                except NoSuchElementException:
+                    pass
+                driver.find_element_by_name('accept').click()
+                text_input = driver.find_element_by_name('nickname')
+                submit_button = driver.find_element_by_id("voteBtn")
+            elif 'minecraft-server.net' in vote_url:
+                text_input = driver.find_element_by_id('mc_user')
+                driver.find_element_by_xpath("//label[@for='rate-10']").click()
+                submit_button = driver.find_element_by_xpath(
+                    "//input[@value='Confirm Vote']")
 
             text_input.click()
+
+            time.sleep(0.5)
 
             # Then we'll fake typing into it
             text_input.send_keys(username)
 
-            time.sleep(2)
         except NoSuchElementException:
-            pass  # Users cannot recieve rewards for voting
-
-        # Now we can grab the submit button and click it
-        submit_button = driver.find_element_by_id("captcha")
-        submit_button.click()
+            out("Failed to find text or vote button")
+            driver.close()
+            return  # Users cannot recieve rewards for voting
 
         time.sleep(4)
 
         try:
             # Try to solve a captcha with the browser extension Buster
-            driver.switch_to.frame(driver.find_element_by_xpath('//*[@title="recaptcha challenge"]'))
-            time.sleep(3)
-            buster_button = driver.find_element_by_xpath('//*[@id="solver-button"]')
-            buster_button.click()
+            driver.switch_to.frame(driver.find_element_by_xpath(
+                "//div[contains(@class,'g-recaptcha')]/div/div/iframe"))
+            checkbox = driver.find_element_by_xpath(
+                '//span[contains(@class,"recaptcha-checkbox")]')
+            checkbox.click()
+            time.sleep(0.1)
+            checkbox.click()
         except NoSuchElementException:
-            pass  # No captcha
+            out("Didn't find a captcha!")
+
+        time.sleep(3)
+
+        self.try_captcha(driver)
+
+        time.sleep(2)
+
+        try:
+            driver.switch_to.default_content()
+            submit_button.click()
+        except NoSuchElementException:
+            out("Failed to find vote button")
+
+        time.sleep(2)
+
+        self.try_captcha(driver)
 
         # TODO Optimize the url check
-        i = 0
         while True:
-            if "success" in driver.current_url or "fail" in driver.current_url:
-                current_url = driver.current_url
+            if 'minecraft-server-list.com' in vote_url:
+                votepasses = driver.find_elements_by_xpath(
+                    "//div[@id='voteerror']/font[@color='green']")
+                votefails = driver.find_elements_by_xpath(
+                    "//div[@id='voteerror']/font[@color='red']")
+                if len(votepasses) > 0:
+                    success = True
+                    break
+                elif len(votefails) > 0:
+                    success = False
+                    break
+            elif 'topg.org' in vote_url:
+                if driver.current_url == 'https://topg.org/Minecraft':
+                    success = True
+                    break
+                elif len(driver.find_elements_by_xpath("//p[@class='alert alert-warning centered']")) > 0:
+                    success = False
+                    break
+            elif 'bestservers.com' in vote_url:
+                if len(driver.find_elements_by_xpath("//div[@class='ui success message']")) > 0:
+                    success = True
+                    break
+                elif len(driver.find_elements_by_xpath("//div[@class='ui error message']")) > 0:
+                    success = False
+                    break
+            elif 'topminecraftservers.org' in vote_url:
+                votedalready = driver.find_elements_by_xpath(
+                    "//button[@disabled='disabled']")
+                for button in votedalready:
+                    if button.text == "You've already voted today!":
+                        success = True
+                        break
+                success = False
                 break
-            elif i == 5:
-                out(f"Captcha failed for {username}")
-                raise UnexpectedAlertPresentException
-            i += 1
-            time.sleep(1)
+            elif 'minecraft-mp.com' in vote_url:
+                if 'confirm' in driver.current_url:
+                    success = True
+                    break
+                elif 'error' in driver.current_url:
+                    success = False
+                    break
+            elif 'minecraft-server.net' in vote_url:
+                if driver.current_url == 'https://minecraft-server.net/':
+                    if len(driver.find_elements_by_xpath("//div[@class='alert alert-danger mt-2']")) > 0:
+                        success = False
+                    else:
+                        success = True
+                    break
+            elif 'mc-servers.com' in vote_url:
+                possible_errors = driver.find_elements_by_xpath(
+                    "//p")
+                for error in possible_errors:
+                    if error.text == 'You already voted today':
+                        success = False
+                        break
+                if len(driver.find_elements_by_xpath(
+                        '//span[@class="left badge green white-text"]')) > 0:
+                    success = True
+                    break
+            else:
+                out("Unsure if the vote worked. Check yourself")
+                success = False
+                if len(input('Press enter to retry, or type anything and then press enter to stop ')) > 0:
+                    break
 
-        if "success" in current_url:
-            out(f"Voted successfully for {username}")
-        elif "fail" in current_url:
-            out(f"Couldn't vote for {username}")
+            raise UnexpectedAlertPresentException
+
+        if success:
+            out(f"Voted successfully!")
+        else:
+            out(f"Couldn't vote!")
 
         driver.close()
+        return 1 if success else 0
 
-    def run(self, usernames, vote_urls):
-        for vote_url in vote_urls:
-            out(f"Voting for the url {vote_url}")
-            for username in usernames:
+    def run(self, usernames, vote_urls, captcha_retries):
+
+        sum_votes = 0
+        for username in usernames:
+            out(f"Voting for {username}")
+            votes = 0
+            for vote_url in vote_urls:
+                out(f"Trying to vote at {vote_url}")
                 driver = self.init_driver()
                 self.install_ext(driver)
-                while True:
+                for _ in range(captcha_retries):
                     try:
-                        self.vote(driver, username, vote_url)
+                        votes += self.vote(driver, username, vote_url)
                         break
-                    except UnexpectedAlertPresentException:
+                    except (UnexpectedAlertPresentException, ElementClickInterceptedException):
                         # Captcha Error
-                        out(f"Retrying to vote for {username}")
+                        if _ < captcha_retries - 1:
+                            out("Retrying vote")
+                        else:
+                            out("Failed Captcha")
                         continue
+                    except KeyboardInterrupt:
+                        break
+
+                try:
+                    driver.close()
+                except (InvalidSessionIdException, NoSuchWindowException):
+                    pass
+
+            out(f"Voted {votes} times for {username}")
+            sum_votes += votes
+        out(f"Voted {sum_votes} times for {len(usernames)} users")
 
 
 if __name__ == "__main__":
     bot = Votebot()
 
-    usernames = get_lines(bot.conf["username_file"])  # Users to get the voting reward for
-    vote_urls = get_lines(bot.conf["vote_url_file"])  # URL to the vote page of a server on minecraft-server.eu
+    # Users to get the voting reward for
+    usernames = get_lines(bot.conf["username_file"])
+    # URL to the vote page of a server on minecraft-server.eu
+    vote_urls = get_lines(bot.conf["vote_url_file"])
 
-    bot.run(usernames, vote_urls)
+    captcha_tries = bot.conf["captcha_tries"]
+
+    bot.run(usernames, vote_urls, captcha_tries)
 
     if bot.conf["use_timer"] == "True":
         while True:
             # calculate a randomized time for the next execution
             time_till_next_day = datetime.combine(
-                    datetime.now().date() + timedelta(days=1), datetime.strptime("0000", "%H%M").time()
-                ) - datetime.now()
+                datetime.now().date() + timedelta(days=1), datetime.strptime("0000", "%H%M").time()
+            ) - datetime.now()
 
             delay = time_till_next_day + timedelta(hours=random.randint(2, 23))
             out(f"Next execution in: {delay}")
             time.sleep(delay.seconds)
-            bot.run(usernames, vote_urls)
+            bot.run(usernames, vote_urls, captcha_tries)

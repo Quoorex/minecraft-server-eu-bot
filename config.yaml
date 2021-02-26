@@ -1,13 +1,14 @@
 username_file: usernames.txt
 vote_url_file: urls.txt
-headless: 'False'
+headless: "True"
 # Fake useragent can cause problems
-fake_useragent: 'False'
+fake_useragent: "False"
 proxy:
-  enabled: 'False'
+  enabled: "False"
   # Allowed types: HTTP, HTTPS, SOCKS
   type: SOCKS
   # If the type is SOCKS specify the version (4 or 5)
   socks_version: 4
   file: proxies.txt
-use_timer: 'False'
+use_timer: "True"
+captcha_tries: 1
