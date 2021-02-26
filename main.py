@@ -16,11 +16,25 @@ from selenium.webdriver.firefox.options import Options
 from webdrivermanager import GeckoDriverManager
 from fake_useragent import UserAgent
 import yaml
+import sys
+import subprocess
 
 from util import get_lines, out
 
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 # TODO Replace time.sleep() with proper Selenium waiting functions
+
 
 class Votebot():
 
@@ -114,7 +128,6 @@ class Votebot():
             driver.switch_to.frame(driver.find_element_by_xpath(
                 "//*[@title='recaptcha challenge']"))
         except NoSuchElementException:
-            out("Didn't find a captcha challenge!")
             return
 
         time.sleep(2)
@@ -122,8 +135,9 @@ class Votebot():
         try:
             driver.find_element_by_xpath(
                 '//*[@id="solver-button"]').click()
+            return
         except (NoSuchElementException, ElementNotInteractableException):
-            out("Didn't find a captcha solve button!")
+            pass
 
         time.sleep(3)
 
@@ -138,14 +152,35 @@ class Votebot():
                 shadow_root.find_element_by_xpath(
                     '//*[@id="solver-button"]').click()
         except NoSuchElementException:
-            out("Didn't find a captcha solve shadowroot button!")
+            pass
+
+    def try_open_captcha(self, driver):
+        try:
+            # Try to solve a captcha with the browser extension Buster
+            driver.switch_to.frame(driver.find_element_by_xpath(
+                "//div[contains(@class,'g-recaptcha')]/div/div/iframe"))
+            checkbox = driver.find_element_by_xpath(
+                '//span[contains(@class,"recaptcha-checkbox")]')
+            checkbox.click()
+            time.sleep(0.1)
+            checkbox.click()
+        except NoSuchElementException:
+            pass
 
     def vote(self, driver, username, vote_url):
         # TODO set viewport depending on whether a mobile or desktop useragent is used
         self.set_viewport_size(driver, 1920, 1080)
         driver.get(vote_url)
 
-        time.sleep(2)
+        time.sleep(1)
+
+        self.try_open_captcha(driver)
+
+        time.sleep(0.5)
+
+        self.try_captcha(driver)
+
+        time.sleep(5)
 
         try:
             # We use .find_element_by_id here because we know the id
@@ -157,7 +192,7 @@ class Votebot():
                 try:
                     driver.find_element_by_xpath(
                         '//a[@class="cc-btn cc-dismiss"]').click()
-                except NoSuchElementException:
+                except Exception:
                     pass
                 text_input = driver.find_element_by_name(
                     "username")
@@ -200,25 +235,14 @@ class Votebot():
             text_input.send_keys(username)
 
         except NoSuchElementException:
-            out("Failed to find text or vote button")
-            driver.close()
+            out(f"{bcolors.FAIL}Failed to find text or vote button{bcolors.ENDC} (Could be because the page is blocking additional votes)")
             return  # Users cannot recieve rewards for voting
 
         time.sleep(4)
 
-        try:
-            # Try to solve a captcha with the browser extension Buster
-            driver.switch_to.frame(driver.find_element_by_xpath(
-                "//div[contains(@class,'g-recaptcha')]/div/div/iframe"))
-            checkbox = driver.find_element_by_xpath(
-                '//span[contains(@class,"recaptcha-checkbox")]')
-            checkbox.click()
-            time.sleep(0.1)
-            checkbox.click()
-        except NoSuchElementException:
-            out("Didn't find a captcha!")
+        self.try_open_captcha(driver)
 
-        time.sleep(3)
+        time.sleep(0.5)
 
         self.try_captcha(driver)
 
@@ -228,7 +252,8 @@ class Votebot():
             driver.switch_to.default_content()
             submit_button.click()
         except NoSuchElementException:
-            out("Failed to find vote button")
+            out(f"{bcolors.FAIL}Failed to find vote button{bcolors.ENDC}")
+            return
 
         time.sleep(2)
 
@@ -296,7 +321,7 @@ class Votebot():
                     success = True
                     break
             else:
-                out("Unsure if the vote worked. Check yourself")
+                out(f"{bcolors.FAIL}Unsure if the vote worked. Check yourself{bcolors.ENDC}")
                 success = False
                 if len(input('Press enter to retry, or type anything and then press enter to stop ')) > 0:
                     break
@@ -304,18 +329,18 @@ class Votebot():
             raise UnexpectedAlertPresentException
 
         if success:
-            out(f"Voted successfully!")
+            out(f"{bcolors.OKGREEN}Voted successfully!{bcolors.ENDC}")
         else:
-            out(f"Couldn't vote!")
+            out(f"{bcolors.FAIL}Vote went through, but was unsuccessful!{bcolors.ENDC} (Page is blocking additional votes)")
 
-        driver.close()
-        return 1 if success else 0
+        return success
 
-    def run(self, usernames, vote_urls, captcha_retries):
+    def run(self, usernames, vote_urls, captcha_retries, num_users):
 
+        random.shuffle(usernames)
         sum_votes = 0
-        for username in usernames:
-            out(f"Voting for {username}")
+        for username in usernames[0:num_users]:
+            out(f"Voting for {bcolors.OKCYAN}{username}{bcolors.ENDC}")
             votes = 0
             for vote_url in vote_urls:
                 out(f"Trying to vote at {vote_url}")
@@ -323,26 +348,25 @@ class Votebot():
                 self.install_ext(driver)
                 for _ in range(captcha_retries):
                     try:
-                        votes += self.vote(driver, username, vote_url)
+                        votes += 1 if self.vote(driver,
+                                                username, vote_url) else 0
                         break
                     except (UnexpectedAlertPresentException, ElementClickInterceptedException):
                         # Captcha Error
                         if _ < captcha_retries - 1:
-                            out("Retrying vote")
+                            out(f"{bcolors.WARNING}Retrying vote{bcolors.ENDC}")
                         else:
-                            out("Failed Captcha")
+                            out(f"{bcolors.HEADER}Failed to vote{bcolors.ENDC}")
                         continue
                     except KeyboardInterrupt:
                         break
 
-                try:
-                    driver.close()
-                except (InvalidSessionIdException, NoSuchWindowException):
-                    pass
+                driver.close()
 
-            out(f"Voted {votes} times for {username}")
+            out(f"Voted {bcolors.WARNING}{votes}{bcolors.ENDC} times for {bcolors.OKCYAN}{username}{bcolors.ENDC}")
             sum_votes += votes
-        out(f"Voted {sum_votes} times for {len(usernames)} users")
+        out(
+            f"Voted a total of {bcolors.WARNING}{sum_votes}{bcolors.ENDC} times for {bcolors.HEADER}{len(usernames[0:num_users])}{bcolors.ENDC} users")
 
 
 if __name__ == "__main__":
@@ -355,16 +379,28 @@ if __name__ == "__main__":
 
     captcha_tries = bot.conf["captcha_tries"]
 
-    bot.run(usernames, vote_urls, captcha_tries)
+    if bot.conf["vote_now"] == "True" or (len(sys.argv) >= 3 and sys.argv[2] == "False"):
+        try:
+            bot.run(usernames, vote_urls, captcha_tries,
+                    bot.conf["users_per_round"])
+        except WebDriverException:
+            out(f"{bcolors.FAIL}Probably not connected to the internet!{bcolors.ENDC}")
 
     if bot.conf["use_timer"] == "True":
-        while True:
-            # calculate a randomized time for the next execution
-            time_till_next_day = datetime.combine(
-                datetime.now().date() + timedelta(days=1), datetime.strptime("0000", "%H%M").time()
-            ) - datetime.now()
+        # calculate a randomized time for the next execution
 
-            delay = time_till_next_day + timedelta(hours=random.randint(2, 23))
-            out(f"Next execution in: {delay}")
-            time.sleep(delay.seconds)
-            bot.run(usernames, vote_urls, captcha_tries)
+        delay = timedelta(hours=bot.conf["timer_min"]) + \
+            timedelta(seconds=random.randint(
+                0, 60 * 60 * (bot.conf["timer_max"] - bot.conf["timer_min"])))
+        out(f"Next execution in: {bcolors.WARNING}{delay}{bcolors.ENDC}")
+        time.sleep(1)
+        p = subprocess.Popen(f"sleep {delay.seconds} && python main.py False",
+                             stdout=subprocess.PIPE, shell=True, stderr=subprocess.STDOUT)
+
+        if len(sys.argv) < 3 or sys.argv[2] != "False":
+            out('')
+            out("Now running in the background.")
+            out(
+                f"Run {bcolors.FAIL}kill -9 {p.pid}{bcolors.ENDC} if you want to stop the bot.")
+            out(
+                f"Run {bcolors.WARNING}cat bot.log{bcolors.ENDC} to see the logs")

@@ -20,5 +20,5 @@ https://topminecraftservers.org/vote/13727
 # Hard captcha I think, 6 hour delay, 1 vote per ip
 https://minecraft-mp.com/server/268820/vote/
 
-# Hard Captcha, 1 vote per ip, 24 hours
+# Hard Captcha, 1 vote per ip per device, 24 hours
 https://minecraft-server.net/vote/mcCesium/

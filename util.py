@@ -1,4 +1,9 @@
 import datetime
+import logging
+logging.basicConfig(filename='bot.log', level=logging.INFO)
+
+with open('bot.log', 'w'):
+    pass
 
 
 def get_lines(file):
@@ -13,3 +18,4 @@ def get_lines(file):
 # function for outputting something
 def out(text: str):
     print(f"{datetime.datetime.now()} {text}")
+    logging.info(f"{datetime.datetime.now()} {text}")
