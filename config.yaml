@@ -10,9 +10,9 @@ proxy:
   # If the type is SOCKS specify the version (4 or 5)
   socks_version: 4
   file: proxies.txt
-use_timer: "True"
+use_colors: "True"
 timer_min: 24
 timer_max: 36
-vote_now: "True"
+delay: 0
 captcha_tries: 3
 users_per_round: 2

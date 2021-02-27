@@ -8,21 +8,12 @@ Forked from Quoorex who made this bot specifically for minecraft-server.eu
 
 - Python 3.6 or higher
 - Pip
-- Poetry (`pip install poetry`)
 - Mozilla Firefox
-
-## Important
-
-- Minecraft-Server.eu does IP ban after around 4-5 votes (not exactly sure) so it's advised to use proxies (that are not banned by Google or else the captchas won't work)
 
 ## Installation
 
-- `poetry install`
-  - this will setup a virtual environment for the project
-- `poetry shell`
-  - activates the environment
-- `python main.py`
-  - runs the program
+- `pip install -r requirements.txt`
+- `python3 bot.py` (`python bot.py` on Windows)
 
 ## Configuration
 

@@ -21,19 +21,32 @@ import subprocess
 
 from util import get_lines, out
 
+# TODO Replace time.sleep() with proper Selenium waiting functions
+
 
 class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-
-# TODO Replace time.sleep() with proper Selenium waiting functions
+    with open("config.yaml") as f:
+        conf = yaml.safe_load(f)
+        if conf['use_colors']:
+            HEADER = '\033[95m'
+            OKBLUE = '\033[94m'
+            OKCYAN = '\033[96m'
+            OKGREEN = '\033[92m'
+            WARNING = '\033[93m'
+            FAIL = '\033[91m'
+            ENDC = '\033[0m'
+            BOLD = '\033[1m'
+            UNDERLINE = '\033[4m'
+        else:
+            HEADER = ''
+            OKBLUE = ''
+            OKCYAN = ''
+            OKGREEN = ''
+            WARNING = ''
+            FAIL = ''
+            ENDC = ''
+            BOLD = ''
+            UNDERLINE = ''
 
 
 class Votebot():
@@ -432,28 +445,31 @@ if __name__ == "__main__":
 
     captcha_tries = bot.conf["captcha_tries"]
 
-    if bot.conf["vote_now"] == "True" or (len(sys.argv) >= 3 and sys.argv[2] == "True"):
+    if len(sys.argv) >= 3 and sys.argv[2] == "True" or bot.conf["delay"] == 0:
         try:
             bot.run(usernames, vote_urls, captcha_tries,
                     bot.conf["users_per_round"])
         except WebDriverException:
             out(f"{bcolors.FAIL}Probably not connected to the internet!{bcolors.ENDC}")
 
-    if bot.conf["use_timer"] == "True":
-        # calculate a randomized time for the next execution
-
         delay = timedelta(hours=bot.conf["timer_min"]) + \
             timedelta(seconds=random.randint(
                 0, 60 * 60 * (bot.conf["timer_max"] - bot.conf["timer_min"])))
         out(f"Next execution in: {bcolors.WARNING}{delay}{bcolors.ENDC}")
         time.sleep(1)
-        p = subprocess.Popen(f"sleep {delay.seconds} && python main.py True",
+        p = subprocess.Popen(f"sleep {delay.seconds} && python votebot.py True",
+                             stdout=subprocess.PIPE, shell=True, stderr=subprocess.STDOUT)
+    else:
+        delay = timedelta(hours=bot.conf["delay"])
+        out(f"Beginning execution in: {bcolors.WARNING}{delay}{bcolors.ENDC}")
+        time.sleep(1)
+        p = subprocess.Popen(f"sleep {delay.seconds} && python votebot.py True",
                              stdout=subprocess.PIPE, shell=True, stderr=subprocess.STDOUT)
 
-        if len(sys.argv) < 3 or sys.argv[2] != "True":
-            out('')
-            out("Now running in the background.")
-            out(
-                f"Run {bcolors.FAIL}kill -9 {p.pid}{bcolors.ENDC} if you want to stop the bot.")
-            out(
-                f"Run {bcolors.WARNING}cat bot.log{bcolors.ENDC} to see the logs")
+    out('')
+    out("Now running in the background.")
+    out(
+        f"Run {bcolors.FAIL}kill -9 {p.pid}{bcolors.ENDC} to stop.")
+    out(
+        f"Run {bcolors.WARNING}cat bot.log{bcolors.ENDC} to see the logs")
+    out("Note: the Process ID changes every time it executes. Check the log for the updated command if you want to stop the bot from running.")
