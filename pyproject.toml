@@ -13,7 +13,7 @@ selenium = "^3.141.0"
 python-anticaptcha = "^0.6.0"
 webdrivermanager = "^0.8.0"
 fake-useragent = "^0.1.11"
-pyyaml = "^5.3.1"
+pyyaml = "^5.4"
 
 [tool.poetry.dev-dependencies]
 pep8 = "^1.7.1"
